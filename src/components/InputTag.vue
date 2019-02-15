@@ -56,9 +56,6 @@ export default {
     allowDuplicates: {
       type: Boolean,
       default: false
-    },
-    beforeAdding: {
-      type: Function
     }
   },
 
@@ -73,12 +70,6 @@ export default {
   computed: {
     isLimit: function() {
       return this.limit > 0 && Number(this.limit) === this.innerTags.length;
-    }
-  },
-
-  watch: {
-    value() {
-      this.innerTags = [...this.value];
     }
   },
 
@@ -113,19 +104,15 @@ export default {
         return;
       }
 
-      const tag = this.beforeAdding
-        ? this.beforeAdding(this.newTag)
-        : this.newTag;
-
       if (
-        tag &&
-        (this.allowDuplicates || this.innerTags.indexOf(tag) === -1) &&
-        this.validateIfNeeded(tag)
+        this.newTag &&
+        (this.allowDuplicates || this.innerTags.indexOf(this.newTag) === -1) &&
+        this.validateIfNeeded(this.newTag)
       ) {
-        this.innerTags.push(tag);
+        this.innerTags.push(this.newTag);
         this.newTag = "";
         this.tagChange();
-
+        this.tagCreated();
         e && e.preventDefault();
       }
     },
@@ -159,6 +146,7 @@ export default {
     remove(index) {
       this.innerTags.splice(index, 1);
       this.tagChange();
+      this.tagRemove();
     },
 
     removeLastTag() {
@@ -172,6 +160,9 @@ export default {
     tagChange() {
       this.$emit("update:tags", this.innerTags);
       this.$emit("input", this.innerTags);
+    },
+    tagCreated(){
+        this.$emit('add:tags', this.innerTags);
     }
   }
 };
@@ -188,9 +179,7 @@ export default {
   >
     <span v-for="(tag, index) in innerTags" :key="index" class="input-tag">
       <span>{{ tag }}</span>
-      <a v-if="!readOnly" @click.prevent.stop="remove(index)" class="remove">
-        <slot name="remove-icon" />
-      </a>
+      <a v-if="!readOnly" @click.prevent.stop="remove(index)" class="remove"></a>
     </span>
     <input
       v-if                     = "!readOnly && !isLimit"
@@ -244,7 +233,7 @@ export default {
   text-decoration: none;
 }
 
-.vue-input-tag-wrapper .input-tag .remove:empty::before {
+.vue-input-tag-wrapper .input-tag .remove::before {
   content: " x";
 }
 
